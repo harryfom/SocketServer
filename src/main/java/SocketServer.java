@@ -7,12 +7,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by FomeIV on 26.04.2016.
+ * Сервер запускает qualThreads потоков обработчиков и ждет соединения на PORT порту
+ * Клиент соединяется с сервером и посылает ему набор символов. В ответ получет этот же набор символов.
+ * Если клиент посылает STOP, то сервер останавливает все потоки и останавливается сам.
  */
 public class SocketServer {
-    public static final int qualThreads = 20;
-    public static final int PORT = 5050;
-    public static boolean stopFlag = false;
-    public static final String STOP = "Bue";
+    private static final int qualThreads = 20;
+    private static final int PORT = 5050;
+    private static final String STOP = "Bue";
+
+    private static boolean stopFlag = false;
     private static Map<Integer, ConcurrentLinkedQueue<Socket>> msg = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
@@ -45,7 +49,7 @@ public class SocketServer {
                             }
                         } else {
                             try {
-                                this.sleep(10);
+                                sleep(10);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -56,7 +60,7 @@ public class SocketServer {
             };
             r.start();
             threads.add(r);
-            msg.put(i, new ConcurrentLinkedQueue());
+            msg.put(i, new ConcurrentLinkedQueue<>());
         }
         ServerSocket serv = new ServerSocket(PORT);
         Random rn = new Random();
@@ -67,12 +71,10 @@ public class SocketServer {
                 Socket s = serv.accept();
                 ConcurrentLinkedQueue<Socket> q = msg.get(rn.nextInt(qualThreads));
                 q.add(s);
-            } catch (SocketTimeoutException e) {
+            } catch (SocketTimeoutException ignored) {
 
             }
         }
-        for (Thread t : threads) {
-            t.interrupt();
-        }
+        threads.forEach(Thread::interrupt);
     }
 }
